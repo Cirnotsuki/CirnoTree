@@ -1,0 +1,181 @@
+@import "./var.less";
+@import "./base.less";
+.cirnotree{
+    position: absolute;
+    width: 100%;
+	height: 100%;
+	max-height: 100%;
+	padding-left: 10px;
+	left: 0;
+    top: 0;
+	z-index: 100;
+	overflow-y: hidden;
+	.noselect();
+    .tree-list{
+        position: relative;
+        overflow-x: auto;
+        overflow-y: hidden;
+        width: 100%;
+        height: 100%;
+        .tree-node{
+            position: relative;
+            padding: 5px;
+            .tree-text{
+                position: relative;
+                white-space: nowrap;
+                display: inline-block;
+                &.tree-predrop::after{
+                    content: '';
+                    .middle();
+                    left: 0;
+                    width: 100%;
+                    height: 34px;
+                    padding: 2px;
+                    border: 2px dotted #AAA;
+                    border-radius: 2px;
+                }
+                i{
+					color: unset;
+					position: relative;
+					display: inline-block;
+                    margin-right: 4px;
+                    font-size: 20px;
+                    height: 14px;
+                    z-index: 101;
+                }
+                span{
+                    font-size: 14px;
+                }
+                input {
+                    line-height: 12px;
+                    padding: 1px 4px;
+                    color: #495057;
+                    background-color: @color-white;
+                    background-clip: padding-box;
+                    border-radius: 2px;
+                    border: none;
+                    outline: 0;
+                    .box-shadow(inset 0 1px 12px rgba(@color-black, 0.075));
+                    .transition(~'border-color,box-shadow');
+            
+                    &:focus {
+                        border-color: lighten(@color-primary, 0.25);
+                    }
+            
+                    &:hover {
+                        .box-shadow(inset 0 1px 2px rgba(@color-black, 0.075), 0 0 0 2px rgba(@color-primary, 0.1); );
+                    }
+                }
+                .tree-line{
+                    position: absolute;
+                    height: 38px;
+                    width: 20px;
+                    bottom: 10px;
+                    border-left: 1px dashed #AAA;
+                    &.tree-subline{
+                        border-bottom: 1px dashed #AAA;
+                    }
+                }
+                .node-title{
+                    cursor: pointer;
+                    padding: 4px;
+                }
+                .node-title:hover{
+                    background-color: #CCC;
+                    border-radius: 4px;
+                }
+                .node-selected, .node-selected:hover,.node-edit:hover {
+                    color: @color-white;
+                    border-radius: 4px;
+                    background-color: tint(@color-primary, 30%);
+                }
+                .tree-expand{
+                    position: absolute;
+                    width: 14px;
+                    height: 14px;
+                    line-height: 12px;
+                    text-align: center;
+                    font-size: 15px;
+                    left: -28px;
+                    top: 4px;
+                    color: #222;
+                    background-color: #FFF;
+                    border: 1px solid #888;
+                    z-index: 101;
+    
+                    &::before{
+                        content: "+";
+                    }
+                    &.tree-open::before{
+                        content: "\2013";
+                    }
+                }
+                .tree-checkbox{
+                    position: relative;
+                    top: 3px;
+                    margin: 0 4px;
+                    display: inline-block;
+                    width: 14px;
+                    height: 14px;
+                    background-color: #FFF;
+                    border: 1px solid #888;
+                    border-radius: 2px;
+                    &.tree-checked::before{
+                        content: '';
+                        position: absolute;
+                        top: 2px;
+                        left: 1px;
+                        width: 10px;
+                        height: 6px;
+                        border-width: 0 0 1px 1px;
+                        border-style: solid;
+                        .transform(rotate(-45deg));
+                    }
+                    &.tree-halfchecked {
+                        border-color: tint(@color-primary, 10%);
+                        background-color: tint(@color-primary, 30%);
+                        &::before {
+                            content: '';
+                            position: absolute;
+                            top: 2px;
+                            left: 1px;
+                            width: 10px;
+                            height: 6px;
+                            border-width: 0 0 1px 1px;
+                            border-style: solid;
+                            color: @color-white;
+                            .transform(rotate(-45deg));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    .tree-first-node .tree-subline{
+        height: 20px !important;
+    }
+    .scroll-bar{
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 5px;
+        height: 100%;
+        padding-bottom: 6px;
+        .rail,.scroller{
+            width: 100%;
+            border-radius: 2px;
+        }
+        .rail{
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            background-color: #dee2e6;
+        }
+        .scroller{
+            position: absolute;
+            height: 100%;
+            background-color: #adb5bd;
+
+        }
+    }
+}
