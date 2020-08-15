@@ -35,7 +35,7 @@ export default{
 				if(e.target.tagName !== 'SPAN' 
 					|| ((/tree-expand/.test(e.target.className) || /tree-checkbox/.test(e.target.className))
 					&& !expand)
-				){ return }
+				)return;
 				let node = e.target;
 				while(!/tree-node/.test(node.className)){
 					node = node.parentElement
@@ -78,7 +78,8 @@ export default{
 				this.dragNode = this.existList[event.target.getAttribute('index')]
 			}
 			this.$refs.tree.ondragenter = event => {
-				if(!/tree-node/.test(event.target.className) || !this.draggable) { return }
+				if(!/tree-node/.test(event.target.className) || !this.draggable) return;
+				event.preventDefault();
 				// 获取节点
 				const node = this.existList[event.target.getAttribute('index')]
 				// 刷新节点状态
@@ -92,16 +93,21 @@ export default{
 				this.dropNode = node;
 			}
 			this.$refs.tree.ondragleave = event => {
-				if(!/tree-predrop/.test(event.target.className)) { return }
+				if(!/tree-predrop/.test(event.target.className)) return;
 				const node = this.existList[event.target.parentElement.getAttribute('index')]
 				if(this.dragNode !== node){
 					this.$set(node, 'dropReady', false);
 				}
 			}
 			this.$refs.tree.ondragend = event => {
-				if(this.dropNode.dropDisabled) { return }
+				if(!this.dropNode) return;
+				if(this.dropNode.dropDisabled) return;
+				if(this.dropNode ===  this.dragNode) return;
+				if(this.isAncestor(this.dropNode, this.dragNode)) return;
 				// 移动节点
 				this.moveNode(this.dropNode, this.dragNode);
+				// 取消节点拖放预备状态
+				this.$set(this.dropNode, 'dropReady', false);
 				// 刷新目录
 				this.refresh(true);
 				// 抛发事件

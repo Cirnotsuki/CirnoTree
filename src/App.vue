@@ -154,7 +154,12 @@ export default {
 		}
 	},
 	mounted() {
-	},
+	}, 
 	components: {tree},
 }
 </script>
+<style lang="less" scoped>
+	body {
+		background-color: #EEE;
+	}
+</style>

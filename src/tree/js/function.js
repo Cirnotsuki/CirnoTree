@@ -1,7 +1,30 @@
-import { refresh } from "less";
-
 export default{
 	methods: {
+		/**
+        * 获取节点的所有祖先目录
+        * @param {Object} node 获取节点的所有祖先列表，返回一个集合。
+        */
+		getAncestors(node) {
+			let [arr, parent] = [[], node.parentNode];
+			while(!!parent) {
+				arr.push(parent);
+				parent = parent.parentNode;
+			}
+			return new Set(arr.reverse())
+		},
+		/**
+        * 判断 target 是不是 node 的祖先节点。
+        * @param {Object} node 节点信息。
+        * @param {Object} target 对比目标。当 target 是node 的一个祖先节点时，返回 true
+        */
+		isAncestor(node, target) {
+			let parent = node.parentNode;
+			while(!!parent) {
+				if(parent === target) return true;
+				parent = parent.parentNode;
+			}
+			return false;
+		},
 		/**
         * 定位到节点位置
         * @param {Object} node 定位到该节点在目录所在的位置。将会展开所有祖先目录并重构实在列表。
@@ -55,15 +78,20 @@ export default{
                 window.onmousemove = null
 			}
 		},
-		// 刷新目录结构
-		refresh(){
-			this.existList = this.getExistList();
+		/**
+        * 刷新目录树视图层的方法
+		* @param {Boolean} deepRefresh 深度刷新，当不确定操作结果时，强制进行结构线的重绘，可能会比较消耗性能。；
+        */
+		refresh(deepRefresh = false){
+			this.existList = this.getExistList(deepRefresh);
 			this.setScroller();
 		},
-		getExistList() {
+		getExistList(deepRefresh) {
 			let [existList, index] = [[], 0];
 			// 重构实在列表
 			this.treeErgodic(node => {
+				// 深度刷新时重绘结构线
+				// deepRefresh && this.treeLineConstructor(node);
 				this.getExist(node, node=> {
 					node.existIndex = index;
 					existList.push(node);
@@ -172,55 +200,70 @@ export default{
         * 添加节点
         * @param {Object} parent 目标节点
         * @param {Object} node 待添加的节点
+        * @param {Boolean} treeRefresh 添加后立刻刷新目录，默认为false，批量添加时不建议启动此开关。单次添加时可打开。
         */
-        addNode(parent, node, treeRefresh){
+        addNode(parent, node, treeRefresh = false){
+			// 记录原始深度
+            const [oldDeep, len] = [node.deep, parent.children.length];
             // 展开父节点
-            this.$set(parent, 'expanded', true)
-            // 记录原始深度
-            const oldDeep = node.deep;
+			this.$set(parent, 'expanded', true);
             // 重定向父节点
             this.$set(node, 'parentNode', parent);
-            // 设置默认属性
+            // 设置默认属性（新建节点时将赋予默认属性）；
             this.setDefaultProperty(node);
             // 重定义深度
-            this.$set(node, 'deep', parent.deep +1 || 1)
-            // 修改所有子节点深度并重构结构线
-            this.getNodes({}, node.children).forEach(child => {
+			this.$set(node, 'deep', !parent.deep ? 1 : parent.deep + 1);
+			// 因为是添加到队列末尾的缘故，所以节点肯定是 LastNode
+			node.isLastNode = true;
+			// 构造节点的结构线
+			this.treeLineConstructor(node);
+			// 节点存在后代时，修改所有子节点深度并重构结构线
+			node.children.length > 0 && this.treeErgodic(node.children, child => {
 				// 重建节点深度
 				this.$set(child, 'deep', child.deep - oldDeep + node.deep);
 				// 重建结构线
 				this.treeLineConstructor(child);
-
 			});
-			this.$set(parent, 'isLeaf', false);
-			// 重构结构线
-			this.treeLineConstructor(node);
 			// 重构节点关系
-			let lastNode = parent.children[parent.children.length - 1];
-			// 修改前后关系
+			let lastNode = parent.children[len - 1];
+			// 修改节点的前后关系
+			// 节点被推倒后代最后，节点的前一节点为节点的后一节点
 			node.prevNode = lastNode;
+			// 节点被添加到了队尾，所以不存在下一节点
 			node.nextNode = null;
-			// 上一节点是目录时重设所有子节点结构线
-			if (!!lastNode && !lastNode.isLeaf) {
+			// 原始末位节点的下一节点改变为被添加进来的节点
+			if(!!lastNode) {
+				lastNode.nextNode = node;
+				// 原先父节点后代的末位节点不再是末位节点
 				lastNode.isLastNode = false;
-				this.getNodes({}, lastNode.children).forEach(child => {
-					// 重构结构线
-					this.treeLineConstructor(child);
-				});
+			}
+			// 上一节点是目录时重设所有子节点结构线
+			if (!!lastNode && lastNode.children.length > 0) {
+				this.treeErgodic(lastNode.children, child => this.treeLineConstructor(child));
 			}
 			// 设置下标
 			node.sub = !lastNode ? 1 : lastNode.sub + 1;
-			node.isLastNode = true;
+			console.log(node.title, node.sub);
             // 插入父节点
 			parent.children.push(node);
 			// 刷新视图
 			treeRefresh && this.refresh();
 		},
-		// 删除节点
-		removeNode(node){
-			let nodeSub = node.sub;
+		/**
+        * 添加节点
+        * @param {Object} node 待删除的节点
+        * @param {Boolean} treeRefresh 删除后立刻刷新目录，默认为false，批量删除时不建议启动此开关。单次删除时可打开。
+        * @param {Boolean} callback 回调被删除的节点
+        */
+		removeNode(node, treeRefresh = false, callback){
+			let [nodeSub, len] = [node.sub, node.parentNode.children.length];
+			// 重设节点关系
+			// 节点移除后，节点的上一节点的下一节点为节点的下一节点
+			if (!!node.prevNode) node.prevNode.nextNode = node.nextNode;
+			// 节点移除后，节点的下一节点的上一节点为节点的上一节点
+			if (!!node.nextNode) node.nextNode.prevNode = node.prevNode;
 			// 当节点不是末位节点时，对后续节点进行下标减量
-			if (!node.isLastNode) {
+			if (node !== node.parentNode.children[len -1]) {
 				let nextNode = node.nextNode;
 				while(nextNode) {
 					// 下标减量
@@ -228,22 +271,43 @@ export default{
 					nextNode = nextNode.nextNode;
 				}
 			}
-			// 重设节点关系
-			if (!!node.prevNode) {
-				node.prevNode.isLastNode = node.isLastNode;
-				node.prevNode.nextNode = node.nextNode;
-			}
-			if (!!node.nextNode) {
-				node.nextNode.prevNode = node.prevNode;
+			console.log('prev.next', !node.prevNode ? null : !node.prevNode.nextNode ? null : node.prevNode.nextNode.title + '/' + node.prevNode.nextNode.sub);
+			console.log('prev', !node.prevNode ? null : node.prevNode.title + '/' + node.prevNode.sub);
+			console.log('node', !node ? null : node.title + '/' + node.sub);
+			console.log('next', !node.nextNode ? null : node.nextNode.title + '/' + node.nextNode.sub);
+			console.log('next.prev', !node.nextNode ? null : !node.nextNode.prevNode ? null : node.nextNode.prevNode.title + '/' + node.nextNode.prevNode.sub);
+
+
+			// 节点为末位节点时，节点移除后节点的上一节点也成为末位节点
+			if(node.isLastNode && !!node.prevNode) {
+				node.prevNode.isLastNode = true;
+				// 节点的末位节点属性发生变化时，重构所有子元素的结构线
+				this.treeErgodic(node.prevNode.children, child => this.treeLineConstructor(child));
 			}
 			
-            node.parentNode.children.splice(nodeSub - 1, 1)
-        },
-        moveNode(parent, node){
+			// 删除节点
+			let removedNode = node.parentNode.children.splice(nodeSub - 1, 1);
+			// 回调被删除的节点
+			!!callback && typeof callback === 'function' && callback(removedNode[0])
+			// 刷新视图
+			treeRefresh && this.refresh();
+		},
+		/**
+        * 移动节点
+        * @param {Object} parent 目标节点
+        * @param {Object} node 待移动的节点
+        * @param {Boolean} treeRefresh 移动后立刻刷新目录，默认为false，批量移动时不建议启动此开关。单次删除时可打开。
+        */
+        moveNode(parent, node, treeRefresh = false){
             // 删除原始节点中的节点
-            this.removeNode(node);
-            // 向新节点添加节点
-            this.addNode(parent, node);
+            this.removeNode(node, false, delnode => {
+				console.log(delnode);
+				// 向新节点添加节点
+				this.addNode(parent, delnode);
+			});
+            
+			// 刷新视图
+			treeRefresh && this.refresh();
         },
         
         delNode(node, parent, i){

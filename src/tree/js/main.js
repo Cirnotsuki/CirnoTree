@@ -1,5 +1,13 @@
 export default{
 	methods: {
+		log() {
+			console.log(arguments);
+			try {
+			  console.log.apply(null, Array.from(arguments))
+			} catch (error) {
+			  console.log.apply(null, [arguments[0], error])
+			}
+		},
 		// 树状图遍历方法
 		treeErgodic(data = this.data, callback) {
 			let result = [];
@@ -100,7 +108,6 @@ export default{
 					if(!parent.isLastNode){
 						node.lineList.push(i);
 					}
-					console.log(i, node.title, parent.title, parent.isLastNode);
 					if(!parent.parentNode){
 						break
 					}
@@ -109,24 +116,34 @@ export default{
 				}
 			}
 		},
+		becomeLastNode() {
+
+		},
+		nolongerLastNode() {
+
+		},
 		// 获取视图层实在节点
 		getExist(node, callback, reconstructor){
 			// 处理节点隐藏的情况，当节点隐藏且为末位节点时，将最接近节点的可视节点修改为末位节点
 			if(node.isLastNode && !node.visible) {
-				let [index, siblings] = [node.sub - 1, !node.parentNode ? this.data : node.parentNode.children];
+				// 获取节点的所有兄弟节点
+				const siblings = !node.parentNode ? this.data : node.parentNode.children;
+				// 因为末位节点隐藏了，所以排除末位节点
+				let index = siblings.length - 1;
+				// 开始反向遍历
 				while(index--){
+					// 设置节点
 					let lastNode = siblings[index];
-					if(lastNode.visible && lastNode.isLeaf) {
+					// 当遍历到的节点为可视节点时，这个节点将成为队列中的末位节点
+					if(lastNode.visible) {
 						lastNode.isLastNode = true;
-						break
-					}
-					if(lastNode.visible && !lastNode.isLeaf) {
-						lastNode.isLastNode = true;
-						this.treeErgodic(lastNode.children, child => {
+						// 节点有后代元素时，需要修改节点后代的结构线
+						lastNode.children.length > 0 && this.treeErgodic(lastNode.children, child => {
 							let i = child.lineList.length;
 							while(i--) {
+								// 删除末位节点位置的结构线
 								if(child.lineList[i] === child.deep - node.deep) {
-									child.lineList.splice(i,1)
+									child.lineList.splice(i, 1)
 									break
 								}
 							}

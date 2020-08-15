@@ -7,7 +7,7 @@
                 :draggable="draggable && !node.dragDisabled"
                 :style="{'padding-left': node.deep*32 + 'px'}"
             >
-                <div class="tree-text" :class="{'tree-predrop': node.dropReady}">
+                <div class="tree-text" :class="{'tree-predrop': node.dropReady, 'node-ondrag': node === dragNode}">
                     <div v-for="(order, index) in node.lineList" :key="index"
                         class="tree-line" :class="{'tree-subline':  order === 0}" 
                         :style="{left: `${order*-32-21}px`}"
