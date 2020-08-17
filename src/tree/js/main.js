@@ -97,16 +97,20 @@ export default{
 		},
 		// 构造结构线
 		treeLineConstructor(node){
+			console.log('treeLineConstructor');
 			// 重置结构线
 			node.lineList = [0];
+			node.lineMap = new Map();
 			// 获取结构线列表
 			if(node.deep > 1){
 				// 搜寻节点的所有父节点
-				let parent = node.parentNode;
+				let [parent, lineIndex] = [node.parentNode, 1];
 				for(let i=1; i<node.deep; i++){
 					// 当父节点不是末位节点时，将节点深度添加进结构线列表
 					if(!parent.isLastNode){
+						node.lineMap.set(i, lineIndex);
 						node.lineList.push(i);
+						lineIndex++
 					}
 					if(!parent.parentNode){
 						break
@@ -116,8 +120,18 @@ export default{
 				}
 			}
 		},
-		becomeLastNode() {
+		becomeLastNode(node) {
+			console.log('becomeLastNode');
 
+			// 修改末位节点信息
+			node.isLastNode = true;
+			// 节点有后代时修改节点结构线
+			node.children.length > 0 && this.treeErgodic(node.children, child => {
+				// 删除末位节点位置的结构线
+				child.lineList.splice(child.lineMap.get(child.deep - node.deep), 1);
+				// 删除映射项
+				child.lineMap.delete(child.deep - node.deep);
+			});
 		},
 		nolongerLastNode() {
 
@@ -143,7 +157,7 @@ export default{
 							while(i--) {
 								// 删除末位节点位置的结构线
 								if(child.lineList[i] === child.deep - node.deep) {
-									child.lineList.splice(i, 1)
+									child.lineList.splice(i, 1);
 									break
 								}
 							}
@@ -180,6 +194,8 @@ export default{
 			!node.hasOwnProperty('children') && this.$set(node, 'children', []);
 			// 设置默认展开
 			!node.hasOwnProperty('expanded') && this.$set(node, 'expanded', false);
+			// 设置结构线映射表
+			!node.hasOwnProperty('lineMap') && this.$set(node, 'lineMap', new Map());
 			// 设置上一节点
 			!node.hasOwnProperty('prevNode') && this.$set(node, 'prevNode', !node.parentNode ? this.data[index-1] : node.parentNode.children[index-1]);
 			// 设置下一节点

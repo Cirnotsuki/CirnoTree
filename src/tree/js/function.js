@@ -280,9 +280,9 @@ export default{
 
 			// 节点为末位节点时，节点移除后节点的上一节点也成为末位节点
 			if(node.isLastNode && !!node.prevNode) {
-				node.prevNode.isLastNode = true;
 				// 节点的末位节点属性发生变化时，重构所有子元素的结构线
-				this.treeErgodic(node.prevNode.children, child => this.treeLineConstructor(child));
+				// this.treeErgodic(node.prevNode.children, child => this.treeLineConstructor(child));
+				this.becomeLastNode(node.prevNode)
 			}
 			
 			// 删除节点
