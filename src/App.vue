@@ -1,12 +1,25 @@
 <template>
-  	<tree :data="data" :opt="opt" v-model="selected" 
-		multiple
-		halfcheck
-		draggable
-	/>
+	<div class="cirno-tree-test-body">
+		<div class="cirno-tree-test">
+			<tree :data="data" ref="tree" :opt="opt" v-model="selected" 
+				multiple
+				halfcheck
+				draggable
+			/>
+		</div>
+		<div class="options">
+			<button @click="addNode()">增加节点</button>
+			<button @click="removeNode()">删除节点</button>
+			<button @click="selected.edit = true">重命名</button>
+			<button>增加节点</button>
+			<button>增加节点</button>
+		</div>
+		<color-picker />
+	</div>
 </template>
 <script>
 import tree from './tree/'
+import colorPicker from './color-picker/'
 import '@/cirnofont/cirnofont.js';
 import "@/cirnofont/cirnofont.css";
 
@@ -32,7 +45,7 @@ export default {
 										{
 											title: '文件夹',
 											children: [
-												{ title: '文档1', icon: 'dotx'  },
+												{ title: '文档1', icon: 'dotx', id: 3547  },
 												{ title: '表格1', icon: 'xlsx'  },
 												{ title: 'PPT1', icon: 'pptx'  },
 												{
@@ -123,7 +136,43 @@ export default {
 											children: [
 												{ title: '文档11', icon: 'dotx'  },
 												{ title: '表格11', icon: 'xlsx'  },
-												{ title: 'PPT11', icon: 'pptx'  }
+												{ title: 'PPT11', icon: 'pptx',
+													children: [
+														{ title: '文档11', icon: 'dotx'  },
+														{ title: '表格11', icon: 'xlsx'  },
+														{ title: 'PPT11', icon: 'pptx',
+															children: [
+																{ title: '文档11', icon: 'dotx'  },
+																{ title: '表格11', icon: 'xlsx'  },
+																{ title: 'PPT11', icon: 'pptx',
+																	children: [
+																		{ title: '文档11', icon: 'dotx'  },
+																		{ title: '表格11', icon: 'xlsx'  },
+																		{ title: 'PPT11', icon: 'pptx',
+																			children: [
+																				{ title: '文档11', icon: 'dotx'  },
+																				{ title: '表格11', icon: 'xlsx'  },
+																				{ title: 'PPT11', icon: 'pptx',
+																					children: [
+																						{ title: '文档11', icon: 'dotx'  },
+																						{ title: '表格11', icon: 'xlsx'  },
+																						{ title: 'PPT11', icon: 'pptx',
+																							children: [
+																								{ title: '文档11', icon: 'dotx'  },
+																								{ title: '表格11', icon: 'xlsx'  },
+																								{ title: 'PPT11', icon: 'pptx'  }
+																							]   
+																						}
+																					] 
+																				}
+																			] 
+																		}
+																	]  
+																}
+															]  
+														}
+													]
+												}
 											]
 										},
 										{ title: '文件2' },
@@ -139,14 +188,13 @@ export default {
 			],
 			opt: {
 				icon: {
-					expanded: {'true': 'folder-open'},
-					isLeaf: {'true': 'file', 'false': 'folder'},
-					locked: {'true': 'folder-locked'},
-					personal: {'true': 'folder-personal'},
-					share: {'true': 'folder-share'},
-					// parentNode: {'null': 'folder-group'}
-
+					'folder-open': {expanded: true, isLeaf: false},
+					'folder': {isLeaf: false},
+					'folder-locked': {locked: true},
+					'folder-personal': {personal: true},
+					'folder-share': {share: true},
 				},
+				// iconDefault: 'file',
 				colorIcon: true,
 				iconPrefix: 'cirno-font',
 				iconClass: 'cirno-font'
@@ -154,12 +202,45 @@ export default {
 		}
 	},
 	mounted() {
-	}, 
-	components: {tree},
+		window.onresize = e => {
+			this.$refs.tree.resize();
+		}
+	},
+	methods: {
+		addNode(){
+			this.$refs.tree.addNode(this.selected, {title: '新建节点', icon: 'folder'}, true)
+		},
+		removeNode(){
+			if(!this.selected) return;
+			this.$refs.tree.removeNode(this.selected, true);
+			this.selected = null;
+		}
+	},
+	components: {tree, colorPicker},
 }
 </script>
 <style lang="less" scoped>
 	body {
 		background-color: #EEE;
+	}
+	
+	.cirno-tree-test-body{
+		display: flex;
+	}
+	.cirno-tree-test{
+		display: inline-block;
+		width: 1000px;
+		height: 900px;
+		border: 1px solid #AAA;
+		margin-right: 10px;
+		// padding: 10px;
+	}
+	.options{
+		display: inline-block;
+		button{
+			display: block;
+			margin-bottom: 10px;
+		}
+
 	}
 </style>

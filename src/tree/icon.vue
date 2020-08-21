@@ -1,5 +1,5 @@
 <template>
-	<div class="cirno-icon">
+	<div class="cirno-icon" v-if="!!name">
 		<svg  aria-hidden="true" v-if="colorful">
 			<use :xlink:href="`#${iconName}`"></use>
 		</svg>

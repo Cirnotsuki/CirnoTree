@@ -109,7 +109,7 @@ export default{
 				// 取消节点拖放预备状态
 				this.$set(this.dropNode, 'dropReady', false);
 				// 刷新目录
-				this.refresh(true);
+				this.refresh();
 				// 抛发事件
 				this.$emit('drag-node-end', this.dragNode, this.dropNode);
 			}

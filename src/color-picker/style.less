@@ -1,0 +1,127 @@
+.cirno-color-wrap{
+	position: fixed;
+	left: 50%;
+	top: 50%;
+	// transform: translate(-50%, -50%);
+	background-color: #FFF;
+	border: 1px solid #CCC;
+	padding: 20px;
+	z-index: 500;
+	.cirno-color-picker{
+		display: flex;
+		.cirno-color-hs{
+			position: relative;
+			width: 180px;
+			height: 150px;
+			margin-right: 10px;
+			margin-bottom: 10px;
+			overflow: hidden;
+			background: linear-gradient(
+				to right,
+				rgb(255,0,0),
+				rgb(255,255,0),
+				rgb(0,255,0), 
+				rgb(0,255,255),
+				rgb(0,0,255),
+				rgb(255,0,255),
+				rgb(255,0,0)
+			);
+			&:before{
+				content: '';
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				background: linear-gradient(to top, rgb(128, 128, 128) , transparent);
+			}
+			.cirno-color-hairs{
+				position: absolute;
+				width: 16px;
+				height: 16px;
+				transform: translate(-50%, -50%);
+				pointer-events: none;
+				svg{
+					height: 16px;
+					width: 16px;
+				}
+			}
+		}
+		.cirno-color-brightness{
+			position: relative;
+			width: 20px;
+			height: 150px;
+			border: 1px solid #EEE;
+			&:after{
+				content: '';
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				background: linear-gradient(to top, rgb(0, 0, 0) , transparent, rgb(255, 255, 255));
+			}
+			.cirno-color-slider{
+				position: absolute;
+				top: 0;
+				width: 100%;
+				height: 16px;
+				transform: translate(0, -50%);
+				svg{
+					position: absolute;
+					width: 10px;
+					height: 10px;
+					top: 3px;
+					left: -10px;
+				}
+				svg:last-of-type{
+					position: absolute;
+					left: unset;
+					right: -10px;
+					transform: rotate(180deg);
+				}
+			}
+			
+		}
+		.cirno-color-preview{
+			width: 50px;
+			height: 50px;
+			border: 1px solid #AAA;
+		}
+		.cirno-color-symbol{
+			position: fixed;
+			width: 0;
+			height: 0;
+		}
+	}
+	.cirno-color-inputer{
+		display: flex;
+		flex-direction: column;
+		flex-wrap: wrap;
+		height: 100px;
+		width: 230px;
+		.row{
+			display: inline-block;
+			margin-bottom: 2px;
+			label{
+				display: inline-block;
+				font-size: 10px;
+				width: 60px;
+			}
+			span{
+				font-size: 10px;
+			}
+			input{
+				text-align: center;
+				width: 32px;
+				margin-right: 2px;
+			}
+			&.color-16bit{
+				label{
+					font-size: 14px;
+					width: 14px;
+				}
+				input{
+					text-align: left;
+					width: 64px;
+				}
+			}
+		}
+	}
+}

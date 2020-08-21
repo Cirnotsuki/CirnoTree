@@ -76,7 +76,7 @@ export default{
 				// 设置默认属性
 				this.setDefaultProperty(node, index, nodeIndex);
 				// 关闭叶子节点
-				this.$set(node, 'expanded', !node.isLeaf);
+				this.$set(node, 'expanded', node.children.length > 0);
 				// 构造结构线
 				this.treeLineConstructor(node);
 				// 获取实在节点, 有回调时添加进实在节点目录
@@ -95,9 +95,24 @@ export default{
 			
 			console.log(`构造目录耗时：${+new Date() - d}ms`);
 		},
+		// 获取实在列表，非暴露方法
+		getExistList(deepRefresh) {
+			let [existList, index] = [[], 0];
+			// 重构实在列表
+			this.treeErgodic(node => {
+				// 深度刷新时重绘结构线
+				deepRefresh && this.treeLineConstructor(node);
+				this.getExist(node, node=> {
+					node.existIndex = index;
+					existList.push(node);
+					index ++;
+				});
+			});
+			return existList;
+		},
 		// 构造结构线
 		treeLineConstructor(node){
-			console.log('treeLineConstructor');
+			// console.log('treeLineConstructor');
 			// 重置结构线
 			node.lineList = [0];
 			node.lineMap = new Map();
@@ -120,21 +135,29 @@ export default{
 				}
 			}
 		},
+		// 成为末位节点0
 		becomeLastNode(node) {
 			console.log('becomeLastNode');
-
 			// 修改末位节点信息
 			node.isLastNode = true;
 			// 节点有后代时修改节点结构线
 			node.children.length > 0 && this.treeErgodic(node.children, child => {
-				// 删除末位节点位置的结构线
-				child.lineList.splice(child.lineMap.get(child.deep - node.deep), 1);
-				// 删除映射项
-				child.lineMap.delete(child.deep - node.deep);
+				this.treeLineConstructor(child);
 			});
 		},
-		nolongerLastNode() {
-
+		// 不再是末位节点
+		nolongerLastNode(node) {
+			console.log('nolongerLastNode');
+			// 修改末位节点信息
+			node.isLastNode = false;
+			// 节点有后代时修改节点结构线
+			node.children.length > 0 && this.treeErgodic(node.children, child => {
+				this.treeLineConstructor(child);
+				// // 添加结构线
+				// child.lineList.push(child.deep - node.deep);
+				// // 修改映射项
+				// child.lineMap.set(child.deep - node.deep, child.lineList.length - 1);
+			});
 		},
 		// 获取视图层实在节点
 		getExist(node, callback, reconstructor){
@@ -194,6 +217,8 @@ export default{
 			!node.hasOwnProperty('children') && this.$set(node, 'children', []);
 			// 设置默认展开
 			!node.hasOwnProperty('expanded') && this.$set(node, 'expanded', false);
+			// 设置默认编辑状态
+			!node.hasOwnProperty('edit') && this.$set(node, 'edit', false);
 			// 设置结构线映射表
 			!node.hasOwnProperty('lineMap') && this.$set(node, 'lineMap', new Map());
 			// 设置上一节点
@@ -203,26 +228,62 @@ export default{
 			// 设置默认展开
 			!node.hasOwnProperty('isRoot') && this.$set(node, 'isRoot', !node.parentNode);
 			// 设置叶标记
-			this.$set(node, 'isLeaf', !node.children.length);
+			!node.hasOwnProperty('isLeaf') && this.$set(node, 'isLeaf', node.children.length === 0);
         },
 		// 设置滚动条
-		setScroller() {
+		setScroller(type) {
 			const existList = this.existList
-			this.nodeHeight = this.$refs.list.querySelector('.tree-node').offsetHeight;
-			// 获取当前高度
-			this.height = this.$refs.tree.offsetHeight-(this.fullHeight ? 0 : 6);
-            // 实在列表不存在或长度不大于零时跳出（防错）
-            if(!existList || !existList.length){ return }
-            // 获取目录高度
-            this.scrollHeight = (existList.length - (this.hideroot ? 1 : 0)) * this.nodeHeight;
-            // 计算比例
-            const rate = this.height / this.scrollHeight;
-            // 设定滚动条高度
-            this.scrollerHeight = Math.max(this.height * rate, 20);
-            // 获取滚动条比例
-            const scrollRate =  (this.height - this.scrollerHeight) / (this.scrollHeight - this.height);
-            // 定位滚动条位置
-			this.top = this.scrollTop * scrollRate;
+			const ScrollerX = (rate, scrollRate) => {
+				// 获取目录宽度
+				this.scrollWidth = this.$refs.list.offsetWidth + 6;
+				// 获取当前宽度
+				this.width = this.$refs.box.offsetWidth - (this.fullWidth ? 0 : 6);
+				
+				// 获取横向滚动条比例
+				rate = this.width / this.scrollWidth;
+				// 设定横向滚动条宽度
+				this.scrollerWidth = Math.max(this.width * rate, 10);
+				// 计算横向滚动条位置
+				scrollRate =  (this.width - this.scrollerWidth) / (this.scrollWidth - this.width);
+				// 定位滚动条位置
+				// this.left = this.scrollLeft * scrollRate;
+				// console.log(this.scrollLeft, scrollRate);
+				// 获取横向滚动条可见性
+				this.fullHeight = this.width / (this.scrollWidth - 12) >= 1;
+			}
+			const ScrollerY = (rate, scrollRate) => {
+				// 获取单节点高度
+				this.nodeHeight = this.$refs.list.querySelector('.tree-node').offsetHeight;
+				// 获取当前高度
+				this.height = this.$refs.tree.offsetHeight-(this.fullHeight ? 0 : 6);
+				// 实在列表不存在或长度不大于零时跳出（防错）
+				if(!existList || !existList.length) return;
+				// 获取目录高度
+				this.scrollHeight = (existList.length - (this.hideroot ? 1 : 0)) * this.nodeHeight + this.nodeHeight;
+				// 计算比例
+				rate = this.height / this.scrollHeight;
+				// 设定滚动条高度
+				this.scrollerHeight = Math.max(this.height * rate, 20);
+				// 获取滚动条比例
+				scrollRate =  (this.height - this.scrollerHeight) / (this.scrollHeight - this.height);
+				// 定位滚动条位置
+				this.top = this.scrollTop * scrollRate;
+				// 获取纵向滚动条可见性
+				this.fullWidth = this.height / this.scrollHeight >= 1;
+			}
+			switch(type) {
+				case 'x':
+					ScrollerX();
+					break
+				case 'y':
+					ScrollerY();
+					break
+				default:
+					ScrollerY();
+					ScrollerX();
+					ScrollerY();
+			}
+			
 		}
 	}
 }
